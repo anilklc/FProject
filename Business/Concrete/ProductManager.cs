@@ -1,5 +1,6 @@
 ﻿using Azure.Core;
 using Business.Abstract;
+using Business.BusinessAspects.Autofac;
 using Business.Constants;
 using Business.ValidationRules.FluentValidation;
 using Core.Aspects.AutoFac.Validation;
@@ -34,7 +35,7 @@ namespace Business.Concrete
 
         //burada attiribute  tipleri typeoflatmak zorundayız kural
         //claim
-        //[SecuredOperation()]
+        [SecuredOperation("admin")]
         [ValidationAspect(typeof(ProductValidator))]
         public IResult Add(Product product)
         {
