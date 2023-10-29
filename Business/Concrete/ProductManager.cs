@@ -3,6 +3,9 @@ using Business.Abstract;
 using Business.BusinessAspects.Autofac;
 using Business.Constants;
 using Business.ValidationRules.FluentValidation;
+using Core.Aspects.AutoFac.Caching;
+using Core.Aspects.AutoFac.Performance;
+using Core.Aspects.AutoFac.Transaction;
 using Core.Aspects.AutoFac.Validation;
 using Core.CrossCuttingConcerns.Validation;
 using Core.Utilities.Business;
@@ -19,7 +22,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using System.Transactions;
 
 namespace Business.Concrete
 {
@@ -37,6 +40,8 @@ namespace Business.Concrete
         //claim
         [SecuredOperation("admin,product.Add")]
         [ValidationAspect(typeof(ProductValidator))]
+        //ekleme işlemi yaptığında cache deki tüm getleri siler
+        [CacheRemoveAspect("IProductService.Get")]
         public IResult Add(Product product)
         {
            IResult result= BusinessRules.Run(CheckIfProductCountOfCategoryCorrect(product.CategoryId)
@@ -49,6 +54,7 @@ namespace Business.Concrete
             return new SuccessResult(Messages.ProductAdded);
         }
 
+        [CacheAspect]
         public IDataResult<List<Product>> GetAll()
         {
             //iş kodları
@@ -66,6 +72,9 @@ namespace Business.Concrete
 
         }
 
+        [CacheAspect]
+        //bu metodun çalışma süresi 10 saniyeyi geçerse beni uyarmasını istiyorum
+        //[PerformanceAspect(10)]
         public IDataResult<Product> GetById(int productId)
         {
             return new SuccessDataResult<Product>(_productDal.Get(p => p.ProductId == productId));
@@ -111,6 +120,22 @@ namespace Business.Concrete
                 return new ErrorResult(Messages.CategoryLimitExceded);
             }
             return new SuccessResult();
+        }
+        //transaction işlemi yaptığımız işlem gerçekleşmediğinde geri dönülmesi için kullanılmakta
+        //örneğin havale işlemi gerçekleşmediğine paramızın hesabımıza geri gelmesi gibi
+
+        [TransactionScopeAspect]
+        public IResult AddTransactionalTest(Product product)
+        {
+          
+            Add(product);
+            if (product.UnitPrice < 10)
+            {
+                throw new Exception("");
+            }
+            Add(product);
+
+            return null;
         }
     }
 }
