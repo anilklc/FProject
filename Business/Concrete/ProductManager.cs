@@ -35,7 +35,7 @@ namespace Business.Concrete
 
         //burada attiribute  tipleri typeoflatmak zorundayız kural
         //claim
-        [SecuredOperation("admin")]
+        [SecuredOperation("admin,product.Add")]
         [ValidationAspect(typeof(ProductValidator))]
         public IResult Add(Product product)
         {
